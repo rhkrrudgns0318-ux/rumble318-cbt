@@ -260,7 +260,7 @@ body.learner .creator-only{display:none!important}
     <div class="msg" id="homeMsg"></div>
     <div id="recWrap" class="muted">아직 기록이 없습니다.</div>
   </div>
-  <footer class="foot">제작자 곽경훈 · 최종 업데이트 2026-11-24 07:35</footer>
+  <footer class="foot">제작자 곽경훈 · 최종 업데이트 2026-11-24 07:48</footer>
   <div class="adminlink" id="adminLink"><button onclick="askPin()">🔒 관리자</button></div>
 </section>
 
@@ -705,7 +705,7 @@ if(!LEARNER) saveSets(true);
 let pubDirty=store.get('fcbt-dirty',null); if(pubDirty===null){ pubDirty=_hadSets; store.set('fcbt-dirty',pubDirty); }
 let selKey=null, S=null, timerId=null;
 let fs=store.get('cbt-fs',17), layout=1;
-function saveSets(quiet){ if(LEARNER) return; if(!quiet && typeof pubDirty!=='undefined'){ pubDirty=true; store.set('fcbt-dirty',true); setTimeout(renderPubBar,0); } const slim={}; Object.entries(sets).forEach(([k,v])=>{ slim[k]=(v.builtin&&BUILTIN[k])?{...v,imgs:undefined}:v; }); store.set('fcbt-sets',slim); store.set('fcbt-years',years); store.set('fcbt-rounds',rounds); }
+function saveSets(quiet){ if(LEARNER) return; if(!quiet && typeof pubDirty!=='undefined'){ pubDirty=true; store.set('fcbt-dirty',true); store.set('fcbt-pending-at',''); setTimeout(renderPubBar,0); } const slim={}; Object.entries(sets).forEach(([k,v])=>{ slim[k]=(v.builtin&&BUILTIN[k])?{...v,imgs:undefined}:v; }); store.set('fcbt-sets',slim); store.set('fcbt-years',years); store.set('fcbt-rounds',rounds); }
 function allRounds(){ const rs=new Set(rounds); Object.values(sets).forEach(st=>{ if(isMock(st)&&st.round) rs.add(String(st.round)); }); return [...rs].sort((a,b)=>(+a)-(+b)); }
 function addRound(){ const rs=allRounds(); const n=String((rs.length?Math.max(...rs.map(Number)):0)+1); rounds.push(n); saveSets(); renderHome(); }
 function removeRound(n){ rounds=rounds.filter(x=>x!==n); saveSets(); renderHome(); }
@@ -1316,13 +1316,21 @@ function restoreBuiltin(){
   setMsg(n?`✔ 시험지 ${n}개를 되살렸습니다.`:'되살릴 시험지가 없습니다. (모든 기본 시험지가 이미 있습니다)',n?'ok':'','homeMsg');
 }
 async function exportDeployData(){
-  const txt=learnerPayload(); let ok=false;
+  const pl=payloadObj(), txt=JSON.stringify(pl); let ok=false;
   try{ const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;
     if(dl){ await dl.save({filename:'data.json',data:txt}); ok=true; }
     else { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'})); a.download='data.json'; document.body.appendChild(a); a.click(); a.remove(); ok=true; }
   }catch(e){}
-  const nd=Object.values(sets).reduce((a,st)=>a+Object.values(st.subs||{}).reduce((b,arr)=>b+arr.filter(q=>isDraft(q.exp)).length,0),0);
-  setMsg(ok?`✔ "data.json"을 내려받았습니다. GitHub 저장소의 data.json 자리에 올리면(덮어쓰기) 몇 분 안에 학습자 화면에 반영됩니다.${nd?` ※ '[초안]' 해설 ${nd}개는 학습자에게 보이지 않습니다.`:''}`:'✖ 파일 저장이 막혀 있습니다.',ok?'ok':'err','homeMsg');
+  if(!ok){ setMsg('✖ 파일 저장이 막혀 있습니다.','err','homeMsg'); return; }
+  store.set('fcbt-pending-at',pl.at); renderPubBar();
+  const hid=Object.values(sets).filter(st=>st.hidden).map(setLabel);
+  const m=`data.json을 내려받았습니다 (${kst(pl.at)} 판).`;
+  setMsg('✔ '+m+' GitHub의 data.json 자리에 덮어써 올리세요.','ok','homeMsg');
+  modalHTML('📥 data.json 받기 완료',`${m}<ol>
+    <li>GitHub 저장소 → <b>Add file → Upload files</b> → 방금 받은 파일을 끌어다 놓고 <b>Commit changes</b></li>
+    <li>⚠ 다운로드 폴더에 예전 파일이 있으면 새 파일이 <b>data (1).json</b>처럼 저장됩니다. 그 경우 <b>가장 최근 파일</b>을 올리되, 이름을 <b>data.json</b>으로 바꿔서 올려야 합니다.</li>
+    <li>올리고 1~2분 뒤 이 관리자 화면을 다시 보면, 위쪽 줄이 자동으로 <b>「✔ 수험자 페이지와 같은 내용」</b>으로 바뀝니다. 바뀌지 않으면 다른(예전) 파일이 올라간 것입니다.</li></ol>
+    <div class="muted">숨김 처리된 시험지: ${hid.length?hid.map(esc).join(', '):'없음'}</div>`,[['확인','primary']]);
 }
 async function copyAllJSON(){
   const data={app:'소방승진기출CBT',version:1,sets:Object.values(sets)};
@@ -1360,13 +1368,14 @@ function renderPubBar(){ const b=document.getElementById('pubBar'); if(!b||LEARN
   const tok=!!store.get('fcbt-gh-token',''), pubAt=store.get('fcbt-pub-at','');
   let cls='', txt='';
   if(pubBusy){ txt='⏳ 수험자 페이지에 게시하는 중입니다…'; }
-  else if(remoteState==='other'){ cls='warn'; txt=`⚠ 다른 기기에서 ${kst(remotePl.at)}에 게시한 내용이 있고, 이 브라우저에도 게시하지 않은 수정이 있습니다.`; }
+  else if(remoteState==='other'){ cls='warn'; txt=`⚠ GitHub의 data.json(${kst(remotePl.at)} 판)이 이 화면 내용과 다릅니다. 예전 파일이 올라갔거나 다른 기기에서 고친 것일 수 있습니다. 이 화면 내용이 맞다면 「📥 data.json 받기」로 다시 받아 올리세요.`; }
+  else if(pubDirty && store.get('fcbt-pending-at','')){ cls='dirty'; txt=`📥 data.json(${kst(store.get('fcbt-pending-at',''))} 판)을 받았습니다. GitHub에 올리면 자동으로 확인됩니다.`; }
   else if(pubDirty){ cls='dirty'; txt='✎ 아직 수험자 페이지에 게시하지 않은 수정 내용이 있습니다.'; }
   else txt=`✔ 수험자 페이지와 같은 내용입니다${pubAt?` (마지막 게시 ${kst(pubAt)})`:''}.`;
   b.className='pubbar '+cls;
   b.innerHTML=`<span class="grow"><b>🔓 관리자 모드</b> · ${txt}</span>`+
     ((pubDirty&&remotePl)?`<button class="btn sm" onclick="adoptRemote(true)" title="게시하지 않은 수정을 버리고 수험자 페이지 내용으로 맞춥니다">⬇ 게시본으로 맞추기</button>`:'')+
-    `<button class="btn sm primary" onclick="publishNow()" ${pubBusy?'disabled':''}>🚀 수험자 페이지에 게시</button>`+
+    `<button class="btn sm primary" onclick="exportDeployData()" title="행정망 등에서 바로 게시가 막힐 때: 파일을 받아 GitHub에 직접 올립니다">📥 data.json 받기</button>`+`<button class="btn sm" onclick="publishNow()" ${pubBusy?'disabled':''} title="GitHub 연결이 되는 곳(집·LTE)에서 바로 게시">🚀 바로 게시</button>`+
     `<button class="btn sm" onclick="askToken()" title="GitHub 게시 열쇠(토큰) 설정">🔑${tok?'':' 게시 설정'}</button>`+
     (DEPLOY_BUILD?`<button class="btn sm" onclick="leaveAdmin()">수험자 화면으로</button>`:'');
 }
@@ -1375,7 +1384,8 @@ function adoptRemote(ask){ if(!remotePl) return;
   if(ask) modal('게시본으로 맞추기','이 브라우저에서 게시하지 않은 수정 내용을 버리고, 수험자 페이지에 게시된 내용으로 바꿉니다. 계속할까요?',[['취소'],['게시본으로 맞추기','danger',go]]); else go(); }
 function syncAdmin(){ if(LEARNER) return;
   fetch(dataURL(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(pl=>{
-    if(!pl||pl.kind!=='learner-sync') return; remotePl=pl; const pubAt=store.get('fcbt-pub-at','');
+    if(!pl||pl.kind!=='learner-sync') return; remotePl=pl; const pubAt=store.get('fcbt-pub-at',''), pend=store.get('fcbt-pending-at','');
+    if(pubDirty && pend && pl.at===pend){ pubDirty=false; store.set('fcbt-dirty',false); store.set('fcbt-pub-at',pl.at); store.set('fcbt-pending-at',''); remoteState=''; renderPubBar(); setMsg('✔ GitHub에 올린 data.json이 확인되었습니다. 수험자 화면에 곧 반영됩니다.','ok','homeMsg'); return; }
     if(!pubDirty){ sets=publishedSets(pl); store.set('fcbt-removed',pl.removed||[]); saveSets(true); store.set('fcbt-pub-at',pl.at); if(!document.getElementById('home').classList.contains('hidden')) renderHome(); remoteState=''; }
     else remoteState=(pubAt && pl.at!==pubAt)?'other':'';
     renderPubBar();
@@ -1418,7 +1428,7 @@ if(!LEARNER){ const al=document.getElementById('adminLink'); if(al) al.remove();
 
 renderHome();
 if(LEARNER && /^https?:/.test(location.protocol)){
-  window.APP_BUILD='2026-11-24 07:35';
+  window.APP_BUILD='2026-11-24 07:48';
   let lastAt=null, pendingReload=null;
   const onHome=()=>!document.getElementById('home').classList.contains('hidden');
   const stamp=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
