@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>소방승진 기출·모의고사 CBT (학습자용)</title>
@@ -249,7 +250,7 @@ body.learner .creator-only{display:none!important}
     <div class="msg" id="homeMsg"></div>
     <div id="recWrap" class="muted">아직 기록이 없습니다.</div>
   </div>
-  <footer class="foot">제작자 곽경훈 · 최종 업데이트 2026-11-23 10:09</footer>
+  <footer class="foot">제작자 곽경훈 · 최종 업데이트 2026-11-23 10:52</footer>
 </section>
 
 <!-- ================= 시험 화면 ================= -->
@@ -1243,6 +1244,7 @@ document.getElementById('restoreFile')?.addEventListener('change',e=>{
 
 renderHome();
 if(LEARNER && /^https?:/.test(location.protocol)){
+  window.APP_BUILD='2026-11-23 10:52';fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(v=>{ if(v&&v.build&&v.build!==window.APP_BUILD){ const k='cbt-reload-'+v.build; if(!sessionStorage.getItem(k)){ sessionStorage.setItem(k,'1'); location.replace(location.pathname+'?v='+encodeURIComponent(v.build)); } } }).catch(()=>{});
   fetch('data.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(pl=>{
     if(!pl||pl.kind!=='learner-sync') return;
     sets=buildLearnerSets(pl);
