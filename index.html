@@ -4,7 +4,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>소방승진 기출·모의고사 CBT (학습자용)</title>
+<title>소방승진 기출·모의고사 CBT</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -205,6 +205,13 @@ code{background:#f1f3f6;border-radius:4px;padding:1px 5px}
 .wm-study{position:fixed;right:268px;bottom:12px;z-index:50;font-size:12px;color:#8a93a3;opacity:.5;pointer-events:none;user-select:none;letter-spacing:.5px;background:rgba(255,255,255,.7);padding:2px 8px;border-radius:6px}
 @media (max-width:760px){.wm-study{right:18px}}
 .wm-exam{font-size:11px;color:#8a93a3;opacity:.45;margin-left:auto;padding-left:14px;white-space:nowrap;user-select:none;letter-spacing:.5px}
+.pubbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:#eef4fb;border:1px solid #c9d9ee;border-radius:8px;padding:10px 12px;margin:0 0 14px;font-size:13.5px}
+.pubbar.dirty{background:#fff7e0;border-color:#f0d58a}.pubbar.warn{background:#fdecea;border-color:#f2b8b2}
+.pubbar .grow{flex:1;min-width:200px}
+.adminlink{text-align:right;margin-top:-4px}.adminlink button{background:none;border:none;color:#9aa3b2;font-size:11px;cursor:pointer;padding:2px 4px;opacity:.6}.adminlink button:hover{opacity:1;text-decoration:underline}
+#mBody input.pin{font:inherit;font-size:20px;letter-spacing:6px;text-align:center;width:160px;padding:8px;border:1px solid var(--line);border-radius:6px;margin-top:10px}
+#mBody input.tok{font:inherit;width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--line);border-radius:6px;margin-top:8px}
+#mBody ol{margin:8px 0 4px 18px;padding:0;line-height:1.7}
 .foot{text-align:right;font-size:11px;color:#8a93a3;opacity:.45;padding:14px 2px 4px;margin-top:8px;user-select:none;letter-spacing:.5px}
 body.learner .creator-only{display:none!important}
 
@@ -221,38 +228,40 @@ body.learner .creator-only{display:none!important}
 <!-- ================= 시작 화면 ================= -->
 <section id="home">
   <div class="brand"><div class="logo">승진</div><h1>소방승진 기출·모의고사 CBT</h1><span class="maker">제작자 곽경훈</span></div>
-  <p class="lead">연도별 기출 시험지와 회차별 자체 제작 모의고사를 골라 풀어 보세요. 각 시험지는 3과목 75문항(과목당 25문항)·75분이 기준입니다.</p>
+  <p class="lead">연도별 기출 시험지와 회차별 자체 제작 모의고사를 골라 풀어 보세요. 각 시험지는 3과목 75문항(과목당 25문항)·75분이 기준이고, 문제는 시험지마다 따로 저장됩니다.</p>
 
+  <div id="pubBar" class="pubbar hidden"></div>
   <div class="panel">
     <div class="bankinfo" style="margin-bottom:12px">
       <h2 style="margin:0">기출 시험지 선택</h2>
       <div class="row" style="gap:6px">
-        
-        
+        <input class="creator-only" id="newYear" placeholder="예: 2020" maxlength="6" style="font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:6px;width:110px">
+        <button class="btn sm creator-only" onclick="addYear()">+ 연도 추가</button>
       </div>
     </div>
     <table class="rec grid" id="yearGrid"></table>
-    
+    <div class="muted creator-only" style="margin-top:10px">칸을 누르면 그 시험지를 고르고, 비어 있는 칸의 <b>+ 입력</b>을 누르면 문제를 넣을 수 있습니다.</div>
   </div>
 
   <div class="panel">
     <div class="bankinfo" style="margin-bottom:12px">
       <h2 style="margin:0">자체 제작 모의고사</h2>
-      
+      <button class="btn sm creator-only" onclick="addRound()">+ 회차 추가</button>
     </div>
     <table class="rec grid" id="mockGrid"></table>
-    
+    <div class="muted creator-only" style="margin-top:10px">기출과 같은 방식으로 회차 × 계급마다 3과목 모의고사를 만들 수 있습니다. 기출 시험지와 따로 저장됩니다.</div>
   </div>
 
   <div class="panel hidden" id="detail"></div>
 
   <div class="panel">
     <div class="bankinfo" style="margin-bottom:10px"><h2 style="margin:0">응시 기록</h2>
-      <div class="row" style="gap:6px"><button class="btn sm primary creator-only" onclick="exportForLearner()">📤 학습자용 반영 파일 받기</button><button class="btn sm creator-only" onclick="restoreBuiltin()" title="삭제했던 기본 기출·모의고사 시험지를 다시 불러옵니다">♻ 지운 시험지 되살리기</button><button class="btn sm primary creator-only" onclick="exportDeployData()" title="GitHub에 올릴 data.json을 내려받습니다">🌐 배포용 data.json 받기</button><button class="btn sm" onclick="clearRecords()">기록 지우기</button></div></div>
+      <div class="row" style="gap:6px"><label class="btn sm creator-only" style="display:inline-block">📂 백업 불러오기<input type="file" id="restoreFile" accept=".json,application/json" class="hidden"></label><button class="btn sm creator-only" onclick="copyAllJSON()">전체 백업 복사</button><button class="btn sm primary creator-only" onclick="exportForLearner()">📤 학습자용 반영 파일 받기</button><button class="btn sm creator-only" onclick="restoreBuiltin()" title="삭제했던 기본 기출·모의고사 시험지를 다시 불러옵니다">♻ 지운 시험지 되살리기</button><button class="btn sm primary creator-only" onclick="exportDeployData()" title="GitHub에 올릴 data.json을 내려받습니다">🌐 배포용 data.json 받기</button><button class="btn sm" onclick="clearRecords()">기록 지우기</button></div></div>
     <div class="msg" id="homeMsg"></div>
     <div id="recWrap" class="muted">아직 기록이 없습니다.</div>
   </div>
-  <footer class="foot">제작자 곽경훈 · 최종 업데이트 2026-11-23 17:42</footer>
+  <footer class="foot">제작자 곽경훈 · 최종 업데이트 2026-11-24 06:53</footer>
+  <div class="adminlink" id="adminLink"><button onclick="askPin()">🔒 관리자</button></div>
 </section>
 
 <!-- ================= 시험 화면 ================= -->
@@ -308,12 +317,65 @@ body.learner .creator-only{display:none!important}
 <!-- ================= 결과 화면 ================= -->
 <section id="result" class="hidden"></section>
 
-<!-- ================= 편집기 ================= -->
+<!-- ================= 편집기 ================= --><!--EDITOR-START-->
+<section id="editor" class="hidden">
+  <div class="bankinfo" style="margin-bottom:16px">
+    <h1 style="font-size:22px;margin:0" id="edH1">기출문제 입력</h1>
+    <button class="btn" onclick="show('home')">← 돌아가기</button>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <label class="field"><span id="edYearLbl">시행 연도</span><input id="edYear" maxlength="6" style="min-width:110px;width:110px" onchange="loadEditorText()"></label>
+      <label class="field">계급<select id="edRank" onchange="fillEdSubjects();loadEditorText()"><option>소방교</option><option>소방장</option><option>소방위</option></select></label>
+      <label class="field">편집할 과목<select id="edSubject" onchange="loadEditorText()"></select></label>
+      <div class="scope" id="edScope" style="flex:1;min-width:240px"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="bankinfo" style="margin-bottom:10px">
+      <h2 style="margin:0" id="edHead">문제 본문</h2>
+      <div class="row" style="gap:6px">
+        <label class="btn sm" style="display:inline-block">📂 파일(.txt/.json)<input type="file" id="edFile" accept=".txt,.json,text/plain,application/json" class="hidden"></label>
+      </div>
+    </div>
+    <textarea id="edText" spellcheck="false"></textarea>
+    <div class="msg" id="edMsg"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="btn" onclick="previewParse()">검사하기</button>
+      <button class="btn primary" onclick="applyEditor()">적용하고 저장</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>입력 형식</h2>
+    <p class="muted" style="margin-top:0">문제마다 빈 줄로 구분합니다. 과목 하나를 골라 편집할 때는 과목 줄 없이 문제만 넣으면 됩니다. "3과목 전체"를 골랐을 때는 <b>[소방법령Ⅰ]</b>, <b>[소방법령2]</b>, <b>[소방전술]</b>처럼 과목 줄을 넣어 나눠 주세요(Ⅰ/1 둘 다 됩니다). 그 계급 시험에 없는 과목은 넣을 수 없습니다. 문제 번호는 실제 시험지 번호 그대로 두어도 됩니다.</p>
+<pre class="fmt">[소방법령Ⅱ]
+1. 「소방기본법」상 소방의 날은 언제인가?
+① 3월 9일
+② 9월 11일
+③ 11월 9일
+④ 11월 19일
+정답: 3
+해설: 소방기본법 제7조에 따라 매년 11월 9일입니다.
+
+2. 다음 문제...
+1) 보기1
+2) 보기2
+3) 보기3
+4) 보기4
+정답: ②</pre>
+  </div>
+</section><!--EDITOR-END-->
 
 <div class="modal hidden" id="modal"><div class="box"><h3 id="mTitle"></h3><p id="mBody"></p><div class="act" id="mAct"></div></div></div>
 
 <script>
-const LEARNER=true; // 학습자용 빌드에서 true
+const DEPLOY_BUILD=true; // 배포(index.html) 빌드에서 true
+const SITE_URL='https://rhkrrudgns0318-ux.github.io/rumble318-cbt/';
+const GH_REPO={owner:'rhkrrudgns0318-ux',repo:'rumble318-cbt',path:'data.json'};
+const PIN_HASH='h1c0qc6a';
+function pinHash(p){ let h=5381; const t='fcbt#'+p+'#318'; for(let i=0;i<t.length;i++) h=((h*33)^t.charCodeAt(i))>>>0; return 'h'+h.toString(36); }
+let ADMIN_ON=false; try{ ADMIN_ON=localStorage.getItem('fcbt-admin')==='1'; }catch(e){}
+const LEARNER=DEPLOY_BUILD && !ADMIN_ON;
 /* ===================== 시험 구성 ===================== */
 const SUBJECTS=['소방법령Ⅰ','소방법령Ⅱ','소방법령Ⅲ','소방법령Ⅳ','행정법','소방전술'];
 const RANKS={
@@ -616,21 +678,34 @@ Object.entries(BUILTIN).forEach(([k,v])=>{ const st=sets[k]; if(!st||!st.builtin
 Object.values(sets).forEach(st=>Object.values(st.subs||{}).forEach(a=>(a||[]).forEach(q=>{ if(q&&isDraft(q.exp)) q.exp=stripDraft(q.exp); })));
 const _needSave=Object.values(sets).reduce((a,st)=>a+fillFromKey(st),0)>0;
 let rounds=store.get('fcbt-rounds',['1','2','3']);
-function buildLearnerSets(pl){ const o=JSON.parse(JSON.stringify(BUILTIN));
-  if(pl&&pl.sets) Object.entries(pl.sets).forEach(([k,v])=>{
-    if(v&&v.builtin&&o[k]){ Object.entries(v.subs||{}).forEach(([sb,arr])=>(arr||[]).forEach((u,ix)=>{ const q=((o[k].subs||{})[sb]||[])[ix]; if(!q||!u) return;
-        q.ans=(u.ans===undefined)?q.ans:u.ans; q.exp=u.exp||''; if(u.acc) q.acc=u.acc; else delete q.acc; if(u.allOk) q.allOk=true; else delete q.allOk; })); }
-    else if(v&&!v.builtin&&v.subs&&!v.hidden) o[k]=v; });
-  if(pl&&pl.sets) Object.entries(pl.sets).forEach(([k,v])=>{ if(o[k]&&v&&v.builtin){ if(v.hidden) o[k].hidden=true; else delete o[k].hidden; } });
+function applyPayload(o,pl){ if(!pl||!pl.sets) return o;
+  (pl.removed||[]).forEach(k=>{ if(o[k]&&o[k].builtin) delete o[k]; });
+  Object.entries(pl.sets).forEach(([k,v])=>{ if(!v) return;
+    if(v.builtin){ if(!o[k]) return;
+      Object.entries(v.subs||{}).forEach(([sb,sv])=>{ const tgt=(o[k].subs[sb]=o[k].subs[sb]||[]);
+        const isArr=Array.isArray(sv), list=isArr?sv:null, n=isArr?sv.length:sv.n, d=isArr?null:(sv.d||{});
+        const put=(ix,u)=>{ if(!u) return; let q=tgt[ix]; if(!q){ if(u.q==null) return; q=tgt[ix]={q:'',opts:[],ans:null,exp:''}; }
+          if(u.q!=null) q.q=u.q; if(u.opts) q.opts=u.opts.slice(); if('img' in u){ if(u.img) q.img=u.img; else delete q.img; }
+          if('ans' in u) q.ans=u.ans; if('exp' in u) q.exp=u.exp||'';
+          if('acc' in u){ if(u.acc) q.acc=u.acc; else delete q.acc; } if('allOk' in u){ if(u.allOk) q.allOk=true; else delete q.allOk; } };
+        if(isArr) list.forEach((u,ix)=>put(ix,u.exp===undefined?u:{...u,exp:u.exp||''})); else Object.entries(d).forEach(([ix,u])=>put(+ix,u));
+        if(typeof n==='number' && n>=0 && n<tgt.length) tgt.length=n; });
+      if(v.hidden) o[k].hidden=true; else delete o[k].hidden; }
+    else if(v.subs) o[k]=JSON.parse(JSON.stringify(v)); });
+  return o; }
+function publishedSets(pl){ const o=JSON.parse(JSON.stringify(BUILTIN)); applyPayload(o,pl); Object.values(o).forEach(fillFromKey); return o; }
+function buildLearnerSets(pl){ const o=publishedSets(pl);
   Object.keys(o).forEach(k=>{ if(o[k].hidden) delete o[k]; });
   Object.values(o).forEach(st=>Object.values(st.subs||{}).forEach(a=>a.forEach(q=>{ if(isDraft(q.exp)) q.exp=stripDraft(q.exp); })));
-  Object.values(o).forEach(fillFromKey); Object.keys(o).forEach(k=>{ if(!ansCount(o[k])) delete o[k]; }); return o; }
+  Object.keys(o).forEach(k=>{ if(!ansCount(o[k])) delete o[k]; }); return o; }
 if(LEARNER){ sets=buildLearnerSets(null); rounds=[]; document.body.classList.add('learner'); }
 let years=store.get('fcbt-years',['2026','2025','2024','2023','2022','2021']); if(!years.includes('2026')) years.push('2026'); if(LEARNER) years=[];
-if(!LEARNER) saveSets();
+const _hadSets=!!store.get('fcbt-sets',null);
+if(!LEARNER) saveSets(true);
+let pubDirty=store.get('fcbt-dirty',null); if(pubDirty===null){ pubDirty=_hadSets; store.set('fcbt-dirty',pubDirty); }
 let selKey=null, S=null, timerId=null;
 let fs=store.get('cbt-fs',17), layout=1;
-function saveSets(){ if(LEARNER) return; const slim={}; Object.entries(sets).forEach(([k,v])=>{ slim[k]=(v.builtin&&BUILTIN[k])?{...v,imgs:undefined}:v; }); store.set('fcbt-sets',slim); store.set('fcbt-years',years); store.set('fcbt-rounds',rounds); }
+function saveSets(quiet){ if(LEARNER) return; if(!quiet && typeof pubDirty!=='undefined'){ pubDirty=true; store.set('fcbt-dirty',true); setTimeout(renderPubBar,0); } const slim={}; Object.entries(sets).forEach(([k,v])=>{ slim[k]=(v.builtin&&BUILTIN[k])?{...v,imgs:undefined}:v; }); store.set('fcbt-sets',slim); store.set('fcbt-years',years); store.set('fcbt-rounds',rounds); }
 function allRounds(){ const rs=new Set(rounds); Object.values(sets).forEach(st=>{ if(isMock(st)&&st.round) rs.add(String(st.round)); }); return [...rs].sort((a,b)=>(+a)-(+b)); }
 function addRound(){ const rs=allRounds(); const n=String((rs.length?Math.max(...rs.map(Number)):0)+1); rounds.push(n); saveSets(); renderHome(); }
 function removeRound(n){ rounds=rounds.filter(x=>x!==n); saveSets(); renderHome(); }
@@ -695,11 +770,11 @@ function renderHome(){
   renderDetail();
   const recs=store.get('fcbt-records',[]);
   const w=document.getElementById('recWrap');
-  if(!recs.length){w.innerHTML='아직 기록이 없습니다. (응시 기록은 이 브라우저에만 저장됩니다)';return;}
+  if(!recs.length){w.innerHTML='아직 기록이 없습니다. (기록과 입력한 문제는 이 브라우저에만 저장됩니다. "전체 백업 복사"로 보관해 두세요)';return;}
   w.innerHTML=`<table class="rec"><tr><th>일시</th><th>이름</th><th>시험지</th><th>모드</th><th>과목별 점수</th><th>전체</th><th>결과</th><th>소요</th><th></th></tr>`+
     recs.slice(0,50).map((r,ri)=>`<tr class="recrow" onclick="showRecord(${ri})" title="눌러서 세부 내용 보기"><td>${esc(r.date)}</td><td>${esc(r.name)}</td><td>${esc(r.title)}</td><td>${esc(r.mode)}</td><td class="l">${esc(r.subs||'')}</td><td><b>${r.score}</b></td><td style="color:${r.pass?'var(--ok)':'var(--bad)'}">${r.pass?'통과':'미달'}</td><td>${fmtTime(r.sec)}</td><td>${r.det?'<span class="btn sm">상세 ▸</span>':'<span class="muted" style="font-size:11px">상세 없음</span>'}</td></tr>`).join('')+'</table>';
 }
-function toggleHidden(){ const st=sets[selKey]; if(!st) return; if(st.hidden) delete st.hidden; else st.hidden=true; saveSets(); renderHome(); setMsg(st.hidden?'🙈 이 시험지는 수험자용에서 숨겨집니다. 배포용 data.json을 다시 올리면 반영됩니다.':'👁 이 시험지가 수험자용에 다시 보입니다. 배포용 data.json을 다시 올리면 반영됩니다.','ok','homeMsg'); }
+function toggleHidden(){ const st=sets[selKey]; if(!st) return; if(st.hidden) delete st.hidden; else st.hidden=true; saveSets(); renderHome(); setMsg(st.hidden?'🙈 이 시험지를 수험자용에서 숨기도록 바꿨습니다. 위의 「🚀 수험자 페이지에 게시」를 누르면 반영됩니다.':'👁 이 시험지를 수험자용에 다시 보이도록 바꿨습니다. 위의 「🚀 수험자 페이지에 게시」를 누르면 반영됩니다.','ok','homeMsg'); }
 function selectSet(k){ selKey=(selKey===k?null:k); renderHome(); if(selKey) document.getElementById('detail').scrollIntoView({behavior:'smooth',block:'nearest'}); }
 function renderDetail(){
   const D=document.getElementById('detail'); const st=selKey&&sets[selKey];
@@ -1204,14 +1279,25 @@ document.getElementById('edFile')?.addEventListener('change',e=>{
     document.getElementById('edText').value=t; previewParse(); };
   rd.readAsText(f,'utf-8'); e.target.value='';
 });
-function learnerPayload(){
-  const out={app:'소방승진기출CBT',kind:'learner-sync',at:new Date().toISOString(),sets:{}};
+function payloadObj(){
+  const out={app:'소방승진기출CBT',kind:'learner-sync',fmt:2,at:new Date().toISOString(),sets:{},removed:Object.keys(BUILTIN).filter(k=>!sets[k])};
+  const J=x=>JSON.stringify(x??null);
   Object.entries(sets).forEach(([k,v])=>{
-    if(v.builtin&&BUILTIN[k]){ const subs={}; Object.entries(v.subs||{}).forEach(([sb,arr])=>{ subs[sb]=arr.map(q=>{ const o={ans:q.ans??null,exp:q.exp||''}; if(q.acc) o.acc=q.acc; if(q.allOk) o.allOk=true; return o; }); }); out.sets[k]={builtin:1,subs}; if(v.hidden) out.sets[k].hidden=true; }
+    if(v.builtin&&BUILTIN[k]){ const B=BUILTIN[k], subs={};
+      Object.entries(v.subs||{}).forEach(([sb,arr])=>{ const barr=(B.subs||{})[sb]||[], d={};
+        arr.forEach((q,ix)=>{ const bq=barr[ix], o={};
+          if(!bq){ Object.assign(o,{q:q.q,opts:q.opts,ans:q.ans??null,exp:q.exp||''}); if(q.img) o.img=q.img; if(q.acc) o.acc=q.acc; if(q.allOk) o.allOk=true; }
+          else{ if(q.q!==bq.q) o.q=q.q; if(J(q.opts)!==J(bq.opts)) o.opts=q.opts; if((q.img||'')!==(bq.img||'')) o.img=q.img||'';
+            if((q.ans??null)!==(bq.ans??null)) o.ans=q.ans??null; if((q.exp||'')!==(bq.exp||'')) o.exp=q.exp||'';
+            if(J(q.acc&&q.acc.length?q.acc:null)!==J(bq.acc&&bq.acc.length?bq.acc:null)) o.acc=q.acc||null; if(!!q.allOk!==!!bq.allOk) o.allOk=!!q.allOk; }
+          if(Object.keys(o).length) d[ix]=o; });
+        if(Object.keys(d).length||arr.length!==barr.length) subs[sb]={n:arr.length,d}; });
+      out.sets[k]={builtin:1,hidden:!!v.hidden,subs}; }
     else out.sets[k]=v;
   });
-  return JSON.stringify(out);
+  return out;
 }
+function learnerPayload(){ return JSON.stringify(payloadObj()); }
 async function exportForLearner(){
   const txt=learnerPayload(), name='학습자용반영_'+new Date().toISOString().slice(0,10)+'.json';
   let ok=false;
@@ -1256,9 +1342,81 @@ document.getElementById('restoreFile')?.addEventListener('change',e=>{
   rd.readAsText(f,'utf-8'); e.target.value='';
 });
 
+/* ===================== 관리자 모드 · 바로 게시 ===================== */
+function modalHTML(title,html,actions,onOpen){ modal(title,'',actions); document.getElementById('mBody').innerHTML=html; if(onOpen) onOpen(); }
+function askPin(){
+  modalHTML('관리자 모드','관리자 PIN 번호를 입력하세요.<br><input class="pin" id="pinIn" type="password" inputmode="numeric" maxlength="8" autocomplete="off"><div class="msg err" id="pinMsg"></div>',
+    [['취소'],['확인','primary',checkPin]],()=>{ const i=document.getElementById('pinIn'); if(!i) return; i.focus(); i.onkeydown=e=>{ if(e.key==='Enter'){ document.getElementById('modal').classList.add('hidden'); checkPin(); } }; });
+}
+function checkPin(){ const v=((document.getElementById('pinIn')||{}).value||'').trim();
+  if(pinHash(v)===PIN_HASH){ try{ localStorage.setItem('fcbt-admin','1'); }catch(e){} location.reload(); }
+  else modal('관리자 모드','PIN 번호가 맞지 않습니다.',[['다시 입력','primary',askPin],['닫기']]); }
+function leaveAdmin(){ modal('수험자 화면으로','관리자 모드를 끄고 수험자 화면으로 돌아갈까요? (게시하지 않은 수정 내용은 이 브라우저에 그대로 남아 있습니다)',
+  [['취소'],['수험자 화면으로','primary',()=>{ try{ localStorage.removeItem('fcbt-admin'); }catch(e){} location.reload(); }]]); }
+const dataURL=()=>(/^https?:/.test(location.protocol)&&DEPLOY_BUILD?'data.json':SITE_URL+'data.json')+'?t='+Date.now();
+let remotePl=null, remoteState='', pubBusy=false;
+const kst=iso=>{ try{ const d=new Date(iso); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }catch(e){ return ''; } };
+function renderPubBar(){ const b=document.getElementById('pubBar'); if(!b||LEARNER) return;
+  const tok=!!store.get('fcbt-gh-token',''), pubAt=store.get('fcbt-pub-at','');
+  let cls='', txt='';
+  if(pubBusy){ txt='⏳ 수험자 페이지에 게시하는 중입니다…'; }
+  else if(remoteState==='other'){ cls='warn'; txt=`⚠ 다른 기기에서 ${kst(remotePl.at)}에 게시한 내용이 있고, 이 브라우저에도 게시하지 않은 수정이 있습니다.`; }
+  else if(pubDirty){ cls='dirty'; txt='✎ 아직 수험자 페이지에 게시하지 않은 수정 내용이 있습니다.'; }
+  else txt=`✔ 수험자 페이지와 같은 내용입니다${pubAt?` (마지막 게시 ${kst(pubAt)})`:''}.`;
+  b.className='pubbar '+cls;
+  b.innerHTML=`<span class="grow"><b>🔓 관리자 모드</b> · ${txt}</span>`+
+    ((pubDirty&&remotePl)?`<button class="btn sm" onclick="adoptRemote(true)" title="게시하지 않은 수정을 버리고 수험자 페이지 내용으로 맞춥니다">⬇ 게시본으로 맞추기</button>`:'')+
+    `<button class="btn sm primary" onclick="publishNow()" ${pubBusy?'disabled':''}>🚀 수험자 페이지에 게시</button>`+
+    `<button class="btn sm" onclick="askToken()" title="GitHub 게시 열쇠(토큰) 설정">🔑${tok?'':' 게시 설정'}</button>`+
+    (DEPLOY_BUILD?`<button class="btn sm" onclick="leaveAdmin()">수험자 화면으로</button>`:'');
+}
+function adoptRemote(ask){ if(!remotePl) return;
+  const go=()=>{ sets=publishedSets(remotePl); store.set('fcbt-removed',remotePl.removed||[]); saveSets(true); pubDirty=false; store.set('fcbt-dirty',false); store.set('fcbt-pub-at',remotePl.at); remoteState=''; selKey=null; renderHome(); renderPubBar(); setMsg('✔ 수험자 페이지에 게시된 내용으로 맞췄습니다.','ok','homeMsg'); };
+  if(ask) modal('게시본으로 맞추기','이 브라우저에서 게시하지 않은 수정 내용을 버리고, 수험자 페이지에 게시된 내용으로 바꿉니다. 계속할까요?',[['취소'],['게시본으로 맞추기','danger',go]]); else go(); }
+function syncAdmin(){ if(LEARNER) return;
+  fetch(dataURL(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(pl=>{
+    if(!pl||pl.kind!=='learner-sync') return; remotePl=pl; const pubAt=store.get('fcbt-pub-at','');
+    if(!pubDirty){ sets=publishedSets(pl); store.set('fcbt-removed',pl.removed||[]); saveSets(true); store.set('fcbt-pub-at',pl.at); if(!document.getElementById('home').classList.contains('hidden')) renderHome(); remoteState=''; }
+    else remoteState=(pubAt && pl.at!==pubAt)?'other':'';
+    renderPubBar();
+  }).catch(()=>{});
+}
+function b64utf8(str){ const bytes=new TextEncoder().encode(str); let bin=''; for(let i=0;i<bytes.length;i+=0x8000) bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000)); return btoa(bin); }
+function askToken(){
+  const has=!!store.get('fcbt-gh-token','');
+  modalHTML('🔑 GitHub 게시 설정',`수험자 페이지에 바로 게시하려면 GitHub 「게시 열쇠(토큰)」가 한 번 필요합니다. 이 열쇠는 <b>이 브라우저에만</b> 저장되며, PIN을 아는 사람이라도 열쇠가 없으면 게시할 수 없습니다.
+    <ol><li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> 열기</li>
+    <li>Token name: 아무 이름 · Expiration: 원하는 기간</li><li>Repository access: <b>Only select repositories</b> → <b>rumble318-cbt</b></li>
+    <li>Permissions → Repository permissions → <b>Contents: Read and write</b></li><li><b>Generate token</b> → 나온 열쇠(github_pat_…)를 복사해 아래에 붙여넣기</li></ol>
+    <input class="tok" id="tokIn" type="password" placeholder="github_pat_…" autocomplete="off">${has?'<div class="muted" style="margin-top:6px">현재 열쇠가 저장되어 있습니다. 새로 붙여넣으면 바뀝니다.</div>':''}`,
+    [['닫기'],...(has?[['열쇠 지우기','danger',()=>{ store.set('fcbt-gh-token',''); renderPubBar(); setMsg('게시 열쇠를 지웠습니다.','','homeMsg'); }]]:[]),['저장','primary',()=>{ const v=((document.getElementById('tokIn')||{}).value||'').trim(); if(!v) return; store.set('fcbt-gh-token',v); renderPubBar(); setMsg('✔ 게시 열쇠를 저장했습니다. 이제 「🚀 수험자 페이지에 게시」를 누르면 바로 반영됩니다.','ok','homeMsg'); }]],
+    ()=>{ const i=document.getElementById('tokIn'); if(i) i.focus(); });
+}
+async function publishNow(){ if(pubBusy) return;
+  const tok=store.get('fcbt-gh-token',''); if(!tok){ askToken(); return; }
+  if(remoteState==='other'){ const ok=await new Promise(res=>modal('게시 확인','다른 기기에서 게시한 더 새로운 내용이 있습니다. 이 브라우저의 내용으로 덮어쓸까요?',[['취소','',()=>res(false)],['덮어쓰기','danger',()=>res(true)]])); if(!ok) return; }
+  pubBusy=true; renderPubBar();
+  const pl=payloadObj(), txt=JSON.stringify(pl), api=`https://api.github.com/repos/${GH_REPO.owner}/${GH_REPO.repo}/contents/${GH_REPO.path}`;
+  const H={Authorization:'Bearer '+tok,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+  let err='';
+  try{
+    let sha; const g=await fetch(api+'?t='+Date.now(),{headers:H,cache:'no-store'});
+    if(g.status===401) throw '게시 열쇠(토큰)가 맞지 않거나 만료되었습니다. 🔑 버튼에서 다시 설정하세요.';
+    if(g.status===403) throw '게시 열쇠에 이 저장소 권한(Contents: Read and write)이 없습니다.';
+    if(g.ok){ sha=(await g.json()).sha; } else if(g.status!==404) throw 'GitHub 응답 오류 ('+g.status+')';
+    const p=await fetch(api,{method:'PUT',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify({message:'관리자 게시 '+kst(pl.at),content:b64utf8(txt),...(sha?{sha}:{})})});
+    if(!p.ok){ let m=''; try{ m=(await p.json()).message||''; }catch(e){} throw (p.status===401?'게시 열쇠가 맞지 않습니다.':p.status===403||p.status===404?'게시 열쇠에 이 저장소 쓰기 권한이 없습니다.':p.status===409?'방금 다른 곳에서 게시되었습니다. 잠시 후 다시 눌러 주세요.':'GitHub 응답 오류 ('+p.status+') '+m); }
+    pubDirty=false; store.set('fcbt-dirty',false); store.set('fcbt-pub-at',pl.at); remotePl=pl; remoteState='';
+  }catch(e){ err=typeof e==='string'?e:'인터넷 연결 또는 GitHub 접속에 실패했습니다.'; }
+  pubBusy=false; renderPubBar();
+  if(err) setMsg('✖ 게시 실패: '+err,'err','homeMsg');
+  else setMsg(`✔ 게시했습니다 (${kst(pl.at)}). 1~2분 뒤 GitHub 페이지가 갱신되고, 수험자 화면은 그 후 3분 안에(또는 창을 다시 볼 때) 자동으로 바뀝니다.`,'ok','homeMsg');
+}
+if(!LEARNER){ const al=document.getElementById('adminLink'); if(al) al.remove(); renderPubBar(); syncAdmin(); document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&!pubBusy) syncAdmin(); }); }
+
 renderHome();
 if(LEARNER && /^https?:/.test(location.protocol)){
-  window.APP_BUILD='2026-11-23 17:42';
+  window.APP_BUILD='2026-11-24 06:53';
   let lastAt=null, pendingReload=null;
   const onHome=()=>!document.getElementById('home').classList.contains('hidden');
   const stamp=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
