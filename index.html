@@ -267,7 +267,7 @@ body.learner .creator-only{display:none!important}
     <div class="msg" id="homeMsg"></div>
     <div id="recWrap" class="muted">아직 기록이 없습니다.</div>
   </div>
-  <footer class="foot">제작자 곽경훈 · 최종 업데이트 2026-11-26 07:38</footer>
+  <footer class="foot">제작자 곽경훈 · 최종 업데이트 2026-11-26 08:02</footer>
   <div class="adminlink" id="adminLink"><button onclick="askPin()">🔒 관리자</button></div>
 </section>
 
@@ -1509,7 +1509,7 @@ async function visitCount(){
   const [d,t]=await Promise.all([one('day-'+day),one('total')]);
   if(!d||!t){ return; }
   if(act==='hit') store.set('fcbt-visit-day',day);
-  box.innerHTML=`👀 오늘 <b>${(+d.value||0).toLocaleString()}</b> · 누적 <b>${(+t.value||0).toLocaleString()}</b>`;
+  box.innerHTML=`👀 Today 방문자수 <b>${(+d.value||0).toLocaleString()}</b> · 역대 방문자수 <b>${(+t.value||0).toLocaleString()}</b>`;
   box.title='하루에 한 번, 브라우저(기기)별로 1명씩 셉니다. 관리자 모드 방문은 세지 않습니다.';
   box.classList.remove('hidden');
 }
@@ -1517,7 +1517,7 @@ visitCount();
 
 renderHome();
 if(LEARNER && /^https?:/.test(location.protocol)){
-  window.APP_BUILD='2026-11-26 07:38';
+  window.APP_BUILD='2026-11-26 08:02';
   let lastAt=null, pendingReload=null;
   const onHome=()=>!document.getElementById('home').classList.contains('hidden');
   const stamp=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
